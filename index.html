@@ -1,0 +1,88 @@
+<html>
+  <head>
+  	<script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+  	<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+  	
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  	<style>
+  		.bold { font-weight: bold; }
+  		.center { text-align: center; }
+  	</style>
+  </head>
+  
+  <body>
+  
+  <div id="root" class="container">
+  	<div class="row bold center">
+  		Picked
+  	</div>
+  	<div class="row center" data-bind="foreach: Heros">
+  		<div class="col-sm-1" data-bind="visible: IsPicked">
+  			<img class="img-responsive" data-bind="attr: { alt: Name, src: 'http://cdn.dota2.com/apps/dota2/images/heroes/' + FormattedName() + '_full.png' }" />
+  		</div>
+  	</div>
+  
+  	<div class="row center">
+  		<button type="button" class="btn btn-primary" data-bind="click: Pick">Pick 3</button>
+  	</div>
+  	
+  	<br/>
+  	<br/>
+  	
+  	<div class="row bold center">
+  		Not Picked
+  	</div>
+  	<div class="row" data-bind="foreach: Heros">
+  		<div class="col-sm-1" data-bind="visible: !IsPicked()">
+  			<img class="img-responsive" data-bind="attr: { alt: Name, src: 'http://cdn.dota2.com/apps/dota2/images/heroes/' + FormattedName() + '_full.png' }" />
+  		</div>
+  	</div>
+  </div>
+  	
+  <script>
+    var PRIMARY_STAT_ENUM = {
+    	STRENGTH: 0,
+    	INTEL: 1,
+    	AGILITY: 2
+    };
+    var vm = {};
+    vm.Heros = ko.observableArray([]);
+    $.ajax({
+    	url: 'http://api.herostats.io/heroes/all',
+    	success: function(result) {
+    		$.each(result, function(index, value) {
+    			value.FormattedName = ko.computed(function() {
+    				return value.Name.replace(' ', '_').replace('-', '').toLowerCase();
+    			});
+    			value.IsIgnored = ko.observable(false);
+    			value.IsPicked = ko.observable(false);
+    			vm.Heros.push(value);
+    		});
+    	}
+    });
+    vm.GetRandomInt = function(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    };
+    vm.Pick = function() {
+    	var intHeros = ko.utils.arrayFilter(vm.Heros(), function(item) {
+    		return item.PrimaryStat == PRIMARY_STAT_ENUM.INTEL && !item.IsIgnored();
+    	});
+    	var strHeros = ko.utils.arrayFilter(vm.Heros(), function(item) {
+    		return item.PrimaryStat == PRIMARY_STAT_ENUM.STRENGTH && !item.IsIgnored();
+    	});
+    	var agiHeros = ko.utils.arrayFilter(vm.Heros(), function(item) {
+    		return item.PrimaryStat == PRIMARY_STAT_ENUM.AGILITY && !item.IsIgnored();
+    	});
+    	
+    	intHeros[vm.GetRandomInt(0, intHeros.length - 1)].IsPicked(true);
+    	strHeros[vm.GetRandomInt(0, strHeros.length - 1)].IsPicked(true);
+    	agiHeros[vm.GetRandomInt(0, agiHeros.length - 1)].IsPicked(true);
+    };
+    
+    ko.applyBindings(vm);
+  </script>
+  
+  </body>
+</html>
